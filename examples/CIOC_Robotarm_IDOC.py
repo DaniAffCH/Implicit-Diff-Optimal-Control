@@ -1,18 +1,14 @@
 import os; os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import numpy as np
-
+from setup_path import DEMO_PATH
 from SafePDP import SafePDP
-from SafePDP import PDP
 from JinEnv import JinEnv
 from casadi import *
-import scipy.io as sio
-import matplotlib.pyplot as plt
 import time
-import random
 import argparse
 
-from SafePDP import IDOC_eq as idoc_eq
-from SafePDP import IDOC_ineq as idoc_ineq
+import IDOC_eq as idoc_eq
+import IDOC_ineq as idoc_ineq
 
 
 if __name__ == '__main__':
@@ -22,20 +18,17 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # --------------------------- load demonstration data ----------------------------------------
-    load = np.load('../Demos/Cartpole_Demo.npy', allow_pickle=True).item()
+    load = np.load(DEMO_PATH + '/Robotarm_Demo.npy', allow_pickle=True).item()
     dt = load['dt']
     demo_storage = load['demos']
 
     # -----------------------------  Load environment -----------------------------------------
-    env = JinEnv.CartPole()
-    # env.initDyn()
-    env.initDyn()
+    env = JinEnv.RobotArm()
+    env.initDyn(g=0)
     env_dyn = env.X + dt * env.f
-    # env.initCost(wx=load['wx'], wq=load['wq'], wdx=load['wdx'], wdq=load['wdq'], wu=0.1)
-    # true_parameter = [load['mc'], load['mp'], load['l'], load['max_u'], load['max_x']]
-    env.initCost(wu=0.1)
-    true_parameter = [load['mc'], load['mp'], load['l'], load['max_u'], load['max_x'], load['wx'], load['wq'], load['wdx'],
-                    load['wdq'], ]
+    env.initCost(wu=load['wu'])
+    true_parameter = [load['m1'], load['m2'], load['l1'], load['l1'], load['max_u'], load['max_q'], load['wq1'], load['wq2'], load['wdq1'],
+                    load['wdq2'], ]
     env.initConstraints()
 
     # ----------------------------create tunable coc object-----------------------
@@ -53,7 +46,7 @@ if __name__ == '__main__':
     coc.setPathInequCstr(env.path_inequ)
     # differentiating CPMP
     coc.diffCPMP()
-    # convert to the unconstrained barrier OC object
+    # convert to the unconstrained OC object
     gamma = 1e-2
     coc.convert2BarrierOC(gamma=gamma)
 
@@ -61,15 +54,15 @@ if __name__ == '__main__':
     clqr = SafePDP.EQCLQR()
 
     # ----------------------------main learning procedure ----------------------
-    # initial guess
-    sigma = 0.05
+    sigma = 0.6
     nn_seed = 100
     np.random.seed(nn_seed)
-    init_parameter = true_parameter + sigma * np.random.random(len(true_parameter))
+    perturb = sigma * np.random.random(len(true_parameter))
+    init_parameter = true_parameter + perturb
 
-    # learning rate and maximum iteration
-    lr = 0.8e-5
-    max_iter = 300
+    # learning rate
+    lr = 2e-3
+    max_iter = 1500
 
     # initialize the storage
     loss_trace_COC = []  # use COC solver to computer trajectory and use theorem 1 to compute the trajectory derivative
@@ -254,4 +247,4 @@ if __name__ == '__main__':
                     'lr': lr,
                     'init_parameter': init_parameter,
                     'true_parameter': true_parameter}
-        np.save(f'./Results/CIOC_Cartpole_trial_1_{args.method}.npy', save_data)
+        np.save(f'./Results/CIOC_Robotarm_trial_1_{args.method}.npy', save_data)

@@ -1,18 +1,14 @@
 import os; os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import numpy as np
-
+from setup_path import DEMO_PATH
 from SafePDP import SafePDP
-from SafePDP import PDP
 from JinEnv import JinEnv
 from casadi import *
-import scipy.io as sio
-import matplotlib.pyplot as plt
 import time
-import random
 import argparse
 
-from SafePDP import IDOC_eq as idoc_eq
-from SafePDP import IDOC_ineq as idoc_ineq
+import IDOC_eq as idoc_eq
+import IDOC_ineq as idoc_ineq
 
 
 if __name__ == '__main__':
@@ -22,19 +18,17 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # --------------------------- load demonstration data ----------------------------------------
-    load = np.load('../Demos/Robotarm_Demo.npy', allow_pickle=True).item()
+    load = np.load(DEMO_PATH + '/Quadrotor_Demo.npy', allow_pickle=True).item()
     dt = load['dt']
     demo_storage = load['demos']
 
     # -----------------------------  Load environment -----------------------------------------
-    env = JinEnv.RobotArm()
-    env.initDyn(g=0)
+    env = JinEnv.Quadrotor()
+    env.initDyn(c=0.01)
     env_dyn = env.X + dt * env.f
-    # env.initCost(wq1=load['wq1'], wq2=load['wq2'], wdq1=load['wdq1'], wdq2=load['wdq2'], wu=load['wu'])
-    # true_parameter = [load['m1'], load['m2'], load['l1'], load['l1'], load['max_u'], load['max_q']]
-    env.initCost(wu=load['wu'])
-    true_parameter = [load['m1'], load['m2'], load['l1'], load['l1'], load['max_u'], load['max_q'], load['wq1'], load['wq2'], load['wdq1'],
-                    load['wdq2'], ]
+    env.initCost(wthrust=0.1)
+    true_parameter = [load['Jx'], load['Jy'], load['Jz'], load['mass'], load['win_len'], load['max_u'], load['max_r'],
+                    load['wr'], load['wv'], load['wq'], load['ww']]
     env.initConstraints()
 
     # ----------------------------create tunable coc object-----------------------
@@ -60,17 +54,18 @@ if __name__ == '__main__':
     clqr = SafePDP.EQCLQR()
 
     # ----------------------------main learning procedure ----------------------
-    sigma = 0.6
-    nn_seed = 100
+    sigma = 0.2
+    sigma = np.full(len(true_parameter), sigma)
+
+    nn_seed = 60
     np.random.seed(nn_seed)
-    perturb = sigma * np.random.random(len(true_parameter))
-    init_parameter = true_parameter + perturb
+    init_parameter = true_parameter + sigma * np.random.random(len(true_parameter))
 
     # learning rate
-    lr = 2e-3
+    lr = 1e-5
     max_iter = 1500
 
-# initialize the storage
+    # initialize the storage
     loss_trace_COC = []  # use COC solver to computer trajectory and use theorem 1 to compute the trajectory derivative
     parameter_trace_COC = np.empty((max_iter, coc.n_auxvar))
     loss_trace_barrierOC = []  # use theorem 2 to approximate both the system trajectory and its derivative
@@ -253,4 +248,4 @@ if __name__ == '__main__':
                     'lr': lr,
                     'init_parameter': init_parameter,
                     'true_parameter': true_parameter}
-        np.save(f'./Results/CIOC_Robotarm_trial_1_{args.method}.npy', save_data)
+        np.save(f'./Results/CIOC_Quadrotor_trial_1_{args.method}.npy', save_data)
