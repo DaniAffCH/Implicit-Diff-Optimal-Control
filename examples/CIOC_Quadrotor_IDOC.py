@@ -1,18 +1,14 @@
 import os; os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import numpy as np
-
+from setup_path import DEMO_PATH
 from SafePDP import SafePDP
-from SafePDP import PDP
 from JinEnv import JinEnv
 from casadi import *
-import scipy.io as sio
-import matplotlib.pyplot as plt
 import time
-import random
 import argparse
 
-from SafePDP import IDOC_eq as idoc_eq
-from SafePDP import IDOC_ineq as idoc_ineq
+import IDOC_eq as idoc_eq
+import IDOC_ineq as idoc_ineq
 
 
 if __name__ == '__main__':
@@ -22,7 +18,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # --------------------------- load demonstration data ----------------------------------------
-    load = np.load('../Demos/Quadrotor_Demo.npy', allow_pickle=True).item()
+    load = np.load(DEMO_PATH + '/Quadrotor_Demo.npy', allow_pickle=True).item()
     dt = load['dt']
     demo_storage = load['demos']
 

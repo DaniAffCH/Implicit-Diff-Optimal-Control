@@ -11,14 +11,25 @@ For more details, see our [paper](https://proceedings.neurips.cc/paper_files/pap
 
 ## Trajectory Derivatives
 
-We provide the implementation of our trajectory derivative computations within the `IDOC_eq.py` (no inequality constraints) and `IDOC_ineq.py` (inequality constraints) file. 
+We provide the implementation of our trajectory derivative computations within the `src/IDOC_eq.py` (no inequality constraints) and `src/IDOC_ineq.py` (inequality constraints) file. 
 
-## Integration with Safe-PDP
+## Installation
 
-We provide an example training script which can be used with the Safe-PDP [codebase](https://github.com/wanxinjin/Safe-PDP/tree/main) for the imitation learning task on the cartpole environment where inequality constraints are present (`CIOC_Cartpole_IDOC.py`). Follow these steps to get started:
+IDOC makes use of [Safe-PDP](https://github.com/wanxinjin/Safe-PDP/tree/main), therefore it is necessary to clone this repository including all the submodules. 
 
-* Clone the Safe-PDP [repository](https://github.com/wanxinjin/Safe-PDP/tree/main)
-* Install all dependencies required to run Safe-PDP (e.g., CasADi)
-* Place the `IDOC_*.py` files into the `Safe-PDP/` folder found in the root directory of the Safe-PDP project. 
-* Place the `CIOC_Carpole_IDOC.py` file into the `Examples/MPC/CIOC/` folder. 
-* Run `CIOC_Carpole_IDOC.py`, which will solve the CIOC problem using IDOC trajectory derivatives!
+```bash
+git clone --recurse-submodules https://github.com/mingu6/Implicit-Diff-Optimal-Control.git
+```
+
+Then install the requirements:
+
+```bash
+pip install -r requirements.txt
+```
+
+The directory `examples` contains bi-level optimization problems solved using IDOC trajectory derivatives.
+E.g.
+
+```bash
+python CIOC_Cartpole_IDOC.py -m full
+```
